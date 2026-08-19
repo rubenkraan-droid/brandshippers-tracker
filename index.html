@@ -150,6 +150,7 @@
       <button data-tab="overzicht" aria-current="true">Overzicht</button>
       <button data-tab="creatives">Creatives</button>
       <button data-tab="hoeken">Hoeken</button>
+      <button data-tab="stories">Stories</button>
       <button data-tab="invoer">Invoer</button>
       <button data-tab="betalingen">Betalingen</button>
     </nav>
@@ -266,6 +267,73 @@
       </div>
     </div>
 
+
+    <!-- STORIES -->
+    <div class="tab" id="tab-stories" hidden>
+      <div class="card">
+        <h2>Story sequences</h2>
+        <p class="sub" style="margin-bottom:12px">Een sequence is één verhaal over meerdere frames. Doorloop laat zien hoeveel procent van wie begon het einde haalt.</p>
+        <div class="scroll"><table id="storyTable"></table></div>
+        <p class="hint">Klik op een rij om de afvalrate per frame te zien.</p>
+      </div>
+
+      <div class="card" id="storyDetail" hidden>
+        <div class="row" style="justify-content:space-between; margin-bottom:4px">
+          <h2 id="sdTitle" style="margin:0"></h2>
+          <button class="btn ghost" id="sdClose" style="padding:5px 12px; font-size:13px">Sluiten</button>
+        </div>
+        <p class="sub" id="sdSub" style="margin-bottom:14px"></p>
+        <div class="tiles" id="sdKpis"></div>
+        <h2 style="margin-top:6px">Wie kijkt er nog mee</h2>
+        <div class="chart-wrap">
+          <div id="storyChart"></div>
+          <div id="stip"></div>
+        </div>
+        <div class="scroll" style="margin-top:8px"><table id="frameTable"></table></div>
+      </div>
+
+      <div class="card">
+        <h2>Nieuwe sequence</h2>
+        <div class="grid">
+          <div><label for="ssCode">Code</label><input id="ssCode" type="text" placeholder="S-2026-08-01"></div>
+          <div><label for="ssDate">Geplaatst op</label><input id="ssDate" type="date"></div>
+          <div><label for="ssAngle">Hoek</label><select id="ssAngle"></select></div>
+          <div>
+            <label for="ssCta">Call to action</label>
+            <select id="ssCta">
+              <option value="link">Link naar landingspagina</option>
+              <option value="dm_vrijheid">DM VRIJHEID</option>
+              <option value="poll">Poll</option>
+              <option value="vraagsticker">Vraagsticker</option>
+              <option value="geen">Geen</option>
+            </select>
+          </div>
+          <div><label for="ssReach">Reach</label><input id="ssReach" type="number" placeholder="unieke accounts"></div>
+        </div>
+        <div style="margin-top:12px"><label for="ssTitle">Het verhaal in één regel</label><input id="ssTitle" type="text" placeholder="Hoe ik van AH-dienst naar eigen winkel ging"></div>
+        <div style="margin-top:12px"><label for="ssNarr">Opbouw van het verhaal</label><textarea id="ssNarr" style="min-height:64px" placeholder="Frame 1 zet de spanning, frame 3 keert het om, frame 5 is de CTA"></textarea></div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="ssSave">Sequence aanmaken</button></div>
+        <div class="msg" id="ssMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Frames invoeren</h2>
+        <div class="grid" style="margin-bottom:10px">
+          <div><label for="sfSeq">Sequence</label><select id="sfSeq"></select></div>
+        </div>
+        <p class="sub">Eén regel per frame, gescheiden door tab, komma of puntkomma:<br>
+          <code>framenr · views · linkkliks · exits · weggetikt · hook</code></p>
+        <textarea id="framePaste" placeholder="1	3810	0	120	260	Twee jaar geleden stond ik hier nog vakken te vullen
+2	3120	0	180	310	Iedereen zei: zoek gewoon een vaste baan
+3	2740	0	140	210	Dit is wat ik in plaats daarvan deed"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="frameSave">Frames opslaan</button>
+          <button class="btn ghost" id="frameClear">Leegmaken</button>
+        </div>
+        <div class="msg" id="frameMsg"></div>
+      </div>
+    </div>
+
     <!-- INVOER -->
     <div class="tab" id="tab-invoer" hidden>
       <div class="card">
@@ -290,10 +358,15 @@
             <select id="lSource">
               <option value="meta">Meta</option>
               <option value="organisch">Organisch</option>
+              <option value="story">Story</option>
               <option value="dm_vrijheid">DM VRIJHEID</option>
               <option value="referral">Referral</option>
               <option value="overig">Overig</option>
             </select>
+          </div>
+          <div>
+            <label for="lStory">Story sequence</label>
+            <select id="lStory"></select>
           </div>
           <div>
             <label for="lCrm">CRM-id</label>
@@ -435,28 +508,31 @@ $$('#tabs button').forEach(b => b.onclick = () => {
 });
 
 /* ---------- state ---------- */
-let D = { totals:null, weekly:[], creatives:[], perf:[], angles:[], rounds:[], leads:[], payments:[] };
+let D = { totals:null, weekly:[], creatives:[], perf:[], angles:[], rounds:[], leads:[], payments:[], stories:[], frames:[] };
 
 async function load() {
-  const [totals, weekly, perf, creatives, angles, rounds, leads, payments] = await Promise.all([
+  const [totals, weekly, perf, creatives, angles, rounds, leads, payments, stories, frames] = await Promise.all([
     sb.from('v_funnel_totals').select('*').single(),
     sb.from('v_weekly').select('*').limit(20),
     sb.from('v_creative_performance').select('*').order('code'),
     sb.from('creatives').select('*').order('code'),
     sb.from('v_angle_performance').select('*').order('sort_order'),
     sb.from('test_rounds').select('*').order('round_no'),
-    sb.from('leads').select('id, crm_id, arrived_at, invest_band, status, qualified, creative_id').order('arrived_at', {ascending:false}).limit(300),
+    sb.from('leads').select('id, crm_id, arrived_at, invest_band, status, qualified, creative_id, story_sequence_id').order('arrived_at', {ascending:false}).limit(300),
     sb.from('v_open_payments').select('*').limit(200),
+    sb.from('v_story_performance').select('*').order('posted_on', {ascending:false}),
+    sb.from('v_story_frames').select('*').order('frame_no'),
   ]);
   D = {
     totals: totals.data, weekly: weekly.data ?? [], perf: perf.data ?? [],
     creatives: creatives.data ?? [], angles: angles.data ?? [], rounds: rounds.data ?? [],
     leads: leads.data ?? [], payments: payments.data ?? [],
+    stories: stories.data ?? [], frames: frames.data ?? [],
   };
 }
 
 /* ---------- render ---------- */
-function render() { renderKpis(); renderChart(); renderWeek(); renderCreatives(); renderAngles(); renderRounds(); renderPayments(); fillSelects(); }
+function render() { renderKpis(); renderChart(); renderWeek(); renderCreatives(); renderAngles(); renderRounds(); renderPayments(); renderStories(); fillSelects(); }
 
 function renderKpis() {
   const t = D.totals; if (!t) return;
@@ -672,7 +748,188 @@ function fillSelects() {
   }).join('');
   $('#cLead').innerHTML = leadOpts || '<option value="">geen leads</option>';
   $('#sLead').innerHTML = leadOpts || '<option value="">geen leads</option>';
+
+  const seqOpts = D.stories.map(s => `<option value="${s.id}">${esc(s.code)} · ${esc(s.title)}</option>`).join('');
+  const keepSeq = $('#sfSeq').value;
+  $('#sfSeq').innerHTML = seqOpts || '<option value="">nog geen sequences</option>';
+  if (keepSeq) $('#sfSeq').value = keepSeq;
+  $('#lStory').innerHTML = '<option value="">— geen —</option>' + seqOpts;
+
+  const keepAngle = $('#ssAngle').value;
+  $('#ssAngle').innerHTML = '<option value="">— geen hoek —</option>' +
+    D.angles.map(a => `<option value="${a.angle_code}">${esc(a.angle_code)} · ${esc(a.angle_name)}</option>`).join('');
+  if (keepAngle) $('#ssAngle').value = keepAngle;
 }
+
+
+/* ---------- stories ---------- */
+function renderStories() {
+  table('#storyTable', [
+    {h:'Datum',      f:r => dmy(r.posted_on)},
+    {h:'Code',       f:r => `<b>${esc(r.code)}</b>`},
+    {h:'Verhaal',    f:r => esc(r.title)},
+    {h:'Hoek',       f:r => esc(r.angle_code ?? '')},
+    {h:'Frames',     num:1, f:r => num(r.frames)},
+    {h:'Reach',      num:1, f:r => num(r.reach)},
+    {h:'Start',      num:1, f:r => num(r.views_start)},
+    {h:'Eind',       num:1, f:r => num(r.views_eind)},
+    {h:'Doorloop',   num:1, f:r => pct(r.doorloop_pct)},
+    {h:'Afval',      num:1, f:r => pct(r.totale_afvalrate_pct)},
+    {h:'Kliks',      num:1, f:r => num(r.link_clicks)},
+    {h:'Klikrate',   num:1, f:r => pct(r.klikrate_op_starters_pct)},
+    {h:'Zwakste',    f:r => r.zwakste_frame ? `frame ${r.zwakste_frame} · ${pct(r.zwakste_afval)}` : '–'},
+    {h:'Leads',      num:1, f:r => num(r.leads)},
+    {h:'Gekwal.',    num:1, f:r => num(r.qualified_leads)},
+    {h:'Verkopen',   num:1, f:r => num(r.sales)},
+  ], D.stories, r => `data-sid="${r.id}" style="cursor:pointer"`);
+  $('#storyTable').querySelectorAll('tbody tr[data-sid]').forEach(tr =>
+    tr.onclick = () => openStory(+tr.dataset.sid));
+}
+
+let openSeq = null;
+function openStory(id) {
+  const s = D.stories.find(x => x.id === id); if (!s) return;
+  openSeq = id;
+  const frames = D.frames.filter(f => f.sequence_id === id).sort((a,b) => a.frame_no - b.frame_no);
+
+  $('#sdTitle').textContent = s.code + ' · ' + s.title;
+  $('#sdSub').textContent =
+    dmy(s.posted_on) + (s.angle_name ? ' · hoek ' + s.angle_code + ' (' + s.angle_name + ')' : '') +
+    ' · CTA: ' + (s.cta_type ?? '–');
+
+  const tiles = [
+    ['Reach', num(s.reach), ''],
+    ['Views frame 1', num(s.views_start), ''],
+    ['Doorloop tot het eind', pct(s.doorloop_pct), s.views_eind != null ? num(s.views_eind) + ' kijkers' : '', true],
+    ['Linkkliks', num(s.link_clicks), s.klikrate_op_starters_pct != null ? pct(s.klikrate_op_starters_pct) + ' van de starters' : '', true],
+    ['Grootste uitstroom', s.zwakste_frame ? 'frame ' + s.zwakste_frame : '–', s.zwakste_afval != null ? pct(s.zwakste_afval) + ' weg' : ''],
+    ['Reacties', num(s.replies), ''],
+    ['Leads', num(s.leads), s.qualified_leads != null ? num(s.qualified_leads) + ' gekwalificeerd' : ''],
+    ['Omzet', eur(s.revenue), s.sales ? num(s.sales) + ' verkopen' : ''],
+  ];
+  $('#sdKpis').innerHTML = tiles.map(([l, v, n, hero]) =>
+    `<div class="tile${hero ? ' hero' : ''}"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div>${n ? `<div class="note">${esc(n)}</div>` : ''}</div>`).join('');
+
+  renderStoryChart(frames);
+
+  table('#frameTable', [
+    {h:'#',        f:f => `<b>${f.frame_no}</b>`},
+    {h:'Hook',     f:f => esc(f.hook ?? '')},
+    {h:'Type',     f:f => esc(f.media_type ?? '')},
+    {h:'Views',    num:1, f:f => num(f.views)},
+    {h:'Retentie', num:1, f:f => pct(f.retentie_pct)},
+    {h:'Afval hierna', num:1, f:f => f.views_volgend_frame == null ? '–' : pct(f.afvalrate_pct)},
+    {h:'Kwijt',    num:1, f:f => f.views_volgend_frame == null ? '–' : num(f.verlies_absoluut)},
+    {h:'Exits',    num:1, f:f => num(f.exited)},
+    {h:'Weggetikt',num:1, f:f => num(f.next_story)},
+    {h:'Kliks',    num:1, f:f => num(f.link_clicks)},
+    {h:'Klikrate', num:1, f:f => pct(f.klikrate_pct)},
+    {h:'Reacties', num:1, f:f => num(f.replies)},
+  ], frames);
+
+  $('#storyDetail').hidden = false;
+  $('#storyDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+$('#sdClose').onclick = () => { $('#storyDetail').hidden = true; openSeq = null; };
+
+function renderStoryChart(frames) {
+  const host = $('#storyChart');
+  if (!frames.length) { host.innerHTML = '<p class="empty">Nog geen frames ingevoerd.</p>'; return; }
+
+  const W = Math.max(560, host.clientWidth || 900), H = 250;
+  const padL = 46, padR = 14, padT = 26, padB = 46;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const max = Math.max(...frames.map(f => f.views), 1);
+  const niceMax = Math.ceil(max / 4) * 4;
+  const step = iw / frames.length;
+  const bw = Math.min(64, step - 16);
+  const y = v => padT + ih - (v / niceMax) * ih;
+
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = Math.round(niceMax * i / 4), yy = y(v);
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="var(--border)" stroke-width="1"/>`;
+    g += `<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="var(--text-muted)">${v.toLocaleString('nl-NL')}</text>`;
+  }
+
+  let bars = '', drops = '';
+  frames.forEach((f, i) => {
+    const x = padL + i * step + (step - bw) / 2;
+    const yTop = y(f.views), base = y(0), hgt = Math.max(0, base - yTop);
+    bars += `<path d="M${x},${yTop+4} a4,4 0 0 1 4,-4 h${bw-8} a4,4 0 0 1 4,4 v${Math.max(0,hgt-4)} h-${bw} z" fill="var(--series-1)"/>`;
+    bars += `<text x="${x+bw/2}" y="${yTop-8}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${f.retentie_pct != null ? f.retentie_pct + '%' : ''}</text>`;
+    bars += `<text x="${x+bw/2}" y="${H-26}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${f.frame_no}</text>`;
+    // uitstroom tussen dit en het volgende frame
+    if (i < frames.length - 1 && f.afvalrate_pct != null && f.afvalrate_pct > 0) {
+      const xm = padL + (i+1) * step;
+      drops += `<text x="${xm}" y="${padT-10}" text-anchor="middle" font-size="10.5" fill="var(--critical)">−${f.afvalrate_pct}%</text>`;
+      drops += `<line x1="${xm}" x2="${xm}" y1="${padT-4}" y2="${padT+ih}" stroke="var(--critical)" stroke-width="1" stroke-dasharray="2 3" opacity="0.35"/>`;
+    }
+    bars += `<rect x="${padL+i*step}" y="${padT}" width="${step}" height="${ih}" fill="transparent" class="shit" data-i="${i}"/>`;
+  });
+  bars += `<text x="${padL}" y="${H-8}" font-size="11" fill="var(--text-muted)">frame</text>`;
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Views per frame met uitstroom">${g}${drops}${bars}</svg>`;
+
+  const tip = $('#stip');
+  host.querySelectorAll('.shit').forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const f = frames[+el.dataset.i];
+      tip.innerHTML = `<b>Frame ${f.frame_no}</b>${f.hook ? '<br>' + esc(f.hook).slice(0,60) : ''}` +
+        `<br>${num(f.views)} views · ${f.retentie_pct}% van de starters` +
+        (f.views_volgend_frame != null ? `<br>${num(f.verlies_absoluut)} haken hierna af (${f.afvalrate_pct}%)` : '') +
+        (f.link_clicks ? `<br>${num(f.link_clicks)} kliks` : '');
+      const b = host.getBoundingClientRect();
+      tip.style.left = Math.min(b.width - 220, e.clientX - b.left + 12) + 'px';
+      tip.style.top = (e.clientY - b.top - 60) + 'px';
+      tip.style.opacity = 1;
+    });
+    el.addEventListener('mouseleave', () => tip.style.opacity = 0);
+  });
+}
+
+$('#ssSave').onclick = async () => {
+  const code = $('#ssCode').value.trim(), title = $('#ssTitle').value.trim();
+  if (!code || !title) return msg('#ssMsg', 'Code en verhaal zijn verplicht.', false);
+  const { error } = await sb.from('story_sequences').insert({
+    code, title,
+    posted_on: $('#ssDate').value || new Date().toISOString().slice(0,10),
+    angle_code: $('#ssAngle').value || null,
+    cta_type: $('#ssCta').value,
+    reach: $('#ssReach').value ? +$('#ssReach').value : null,
+    narrative: $('#ssNarr').value.trim() || null,
+  });
+  if (error) return msg('#ssMsg', error.message, false);
+  ['#ssCode','#ssTitle','#ssReach','#ssNarr'].forEach(s => $(s).value = '');
+  msg('#ssMsg', 'Sequence aangemaakt.');
+  await load(); render();
+};
+
+$('#frameClear').onclick = () => $('#framePaste').value = '';
+$('#frameSave').onclick = async () => {
+  const sid = $('#sfSeq').value;
+  if (!sid) return msg('#frameMsg', 'Kies eerst een sequence.', false);
+  const lines = $('#framePaste').value.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return msg('#frameMsg', 'Niets om op te slaan.', false);
+  const n = v => { const x = parseFloat(String(v ?? '0').replace(/\./g,'').replace(',', '.')); return isNaN(x) ? 0 : Math.round(x); };
+  const rows = [], bad = [];
+  for (const line of lines) {
+    const p = line.split(/[\t;,]/).map(s => s.trim());
+    if (p.length < 2 || !n(p[0])) { bad.push(line); continue; }
+    rows.push({
+      sequence_id: +sid, frame_no: n(p[0]), views: n(p[1]),
+      link_clicks: n(p[2]), exited: n(p[3]), next_story: n(p[4]),
+      hook: (p[5] ?? '').trim() || null,
+    });
+  }
+  if (!rows.length) return msg('#frameMsg', 'Geen bruikbare regels.', false);
+  const { error } = await sb.from('story_frames').upsert(rows, { onConflict: 'sequence_id,frame_no' });
+  if (error) return msg('#frameMsg', error.message, false);
+  msg('#frameMsg', `${rows.length} frame(s) opgeslagen${bad.length ? `, ${bad.length} overgeslagen` : ''}.`);
+  $('#framePaste').value = bad.join('\n');
+  await load(); render();
+  if (openSeq) openStory(openSeq);
+};
 
 /* ---------- invoer ---------- */
 $('#lSave').onclick = async () => {
@@ -680,6 +937,7 @@ $('#lSave').onclick = async () => {
     creative_id: $('#lCreative').value ? +$('#lCreative').value : null,
     invest_band: $('#lInvest').value,
     source: $('#lSource').value,
+    story_sequence_id: $('#lStory').value ? +$('#lStory').value : null,
     crm_id: $('#lCrm').value.trim() || null,
   };
   if ($('#lDate').value) row.arrived_at = new Date($('#lDate').value).toISOString();
@@ -708,6 +966,7 @@ $('#sSave').onclick = async () => {
   const lead = D.leads.find(l => l.id === leadId);
   const { error } = await sb.from('sales').insert({
     lead_id: leadId, creative_id: lead?.creative_id ?? null,
+    story_sequence_id: lead?.story_sequence_id ?? null,
     amount: +$('#sAmount').value || 3000,
     payment_plan: +$('#sPlan').value,
     closed_on: $('#sDate').value || new Date().toISOString().slice(0,10),
@@ -761,8 +1020,9 @@ if (!session) {
     $('#whoami').textContent = session.user.email;
     $('#lDate').value = new Date().toISOString().slice(0,10);
     $('#sDate').value = new Date().toISOString().slice(0,10);
+    $('#ssDate').value = new Date().toISOString().slice(0,10);
     await load(); render();
-    addEventListener('resize', () => renderChart());
+    addEventListener('resize', () => { renderChart(); if (openSeq) openStory(openSeq); });
   }
 }
 </script>

@@ -114,6 +114,8 @@ een SMTP-provider onder Authentication → Emails.
 | `calls` | Kwalificatie- en salescalls, met uitkomst |
 | `sales` | Verkopen met bedrag en aantal termijnen |
 | `payments` | De termijnen, automatisch aangemaakt bij een verkoop |
+| `story_sequences` | Een story-reeks: het verhaal, de hoek, de CTA en de reach |
+| `story_frames` | Per frame: views, exits, weggetikt, linkkliks, reacties |
 | `other_costs` | Kosten buiten Meta om |
 | `access_grants` | Wie mag inloggen en wie mag bewerken |
 
@@ -129,6 +131,8 @@ CRM staan — dat scheelt je een AVG-verplichting op een systeem dat je zelf beh
 | `v_creative_performance` | Per creative: spend tot omzet, met CPL, kosten per gekwalificeerde lead, show rate en ROAS |
 | `v_angle_performance` | Hetzelfde geaggregeerd per hoek |
 | `v_weekly` | Weekoverzicht |
+| `v_story_frames` | Per frame: retentie, afvalrate naar het volgende frame, klikrate |
+| `v_story_performance` | Per sequence: doorloop, totale afval, zwakste frame, kliks, leads en omzet |
 | `v_open_payments` | Openstaande termijnen, achterstallig gemarkeerd |
 
 ---
@@ -144,6 +148,28 @@ Wekelijkse routine:
 2. Nieuwe leads invoeren met hun investeringsband
 3. Calls en verkopen bijwerken
 4. **Hoeken** bekijken: welke boodschap levert gekwalificeerde leads, niet welke levert klikken
+
+### Story sequences
+
+Een sequence is één verhaal over meerdere frames. Je legt per frame de views vast;
+het dashboard rekent zelf uit hoeveel procent van de starters er nog kijkt
+(retentie) en waar de grootste uitstroom zit.
+
+1. **Stories → Nieuwe sequence**: code, datum, het verhaal in één regel, de hoek
+   (dezelfde A t/m G als de advertenties) en de reach
+2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · weggetikt · hook`
+3. Klik de sequence aan om de afvalrate per frame te zien
+
+Waar je op let: het frame met de hoogste afvalrate is waar je verhaal het publiek
+kwijtraakt. Zit dat bij frame 1 of 2, dan klopt je opening niet. Zit het vlak voor
+de CTA, dan is de opbouw te lang. Doordat sequences dezelfde hoeken gebruiken als
+je advertenties, kun je zien of een verhaal dat in stories werkt ook als static
+werkt, en andersom.
+
+Leads en verkopen kun je aan een sequence koppelen, zodat naast de kijkcijfers ook
+zichtbaar wordt wat een verhaal daadwerkelijk oplevert.
+
+---
 
 Beoordeel geen creative op basis van één week. Bij een ticket van €3.000 met een
 callfunnel duurt het twee tot drie weken voordat een oordeel iets waard is.
