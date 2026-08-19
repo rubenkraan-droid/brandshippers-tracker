@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Brandshippers · Ads tracker</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f3f0;
+    --surface-1: #fcfcfb;
+    --border:    #e2e0da;
+    --border-strong: #c9c6bd;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #7a7871;
+    --series-1: #2a78d6;
+    --series-rest: #d5d3cd;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --accent-soft: #eef4fd;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border:    #302f2c;
+    --border-strong: #46453f;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #8f8e85;
+    --series-1: #3987e5;
+    --series-rest: #46453f;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --accent-soft: #1d2a3c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-0: #111110; --surface-1: #1a1a19;
+      --border: #302f2c; --border-strong: #46453f;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #8f8e85;
+      --series-1: #3987e5; --series-rest: #46453f; --accent-soft: #1d2a3c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 20px 72px; }
+  h1 { font-size: 19px; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; margin: 0 0 12px; letter-spacing: -0.005em; }
+  .sub { color: var(--text-secondary); font-size: 13px; margin: 2px 0 0; }
+  header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; }
+  nav button {
+    background: transparent; border: 1px solid transparent; color: var(--text-secondary);
+    padding: 7px 13px; border-radius: 7px; cursor: pointer; font-size: 14px; font-family: inherit;
+  }
+  nav button:hover { background: var(--surface-1); color: var(--text-primary); }
+  nav button[aria-current="true"] { background: var(--surface-1); border-color: var(--border); color: var(--text-primary); font-weight: 600; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .tiles { grid-template-columns: 1fr; } }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--text-secondary); text-transform: none; margin-bottom: 6px; }
+  .tile .value { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tile .note { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tile.hero { background: var(--accent-soft); border-color: var(--border-strong); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-weight: 600; color: var(--text-secondary); font-size: 12px; position: sticky; top: 0; background: var(--surface-1); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:hover { background: var(--surface-0); }
+  .scroll { overflow-x: auto; }
+  .tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11.5px; border: 1px solid var(--border-strong); color: var(--text-secondary); }
+  .tag.live { border-color: var(--good); color: var(--good); }
+  .tag.gestopt { border-color: var(--critical); color: var(--critical); }
+  .tag.concept { color: var(--text-muted); }
+  label { display: block; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 4px; }
+  input, select, textarea, button.btn {
+    font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border-strong); background: var(--surface-1); color: var(--text-primary); width: 100%;
+  }
+  textarea { min-height: 110px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: end; }
+  button.btn { cursor: pointer; background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); font-weight: 600; width: auto; padding: 9px 16px; }
+  button.btn.ghost { background: transparent; color: var(--text-primary); border-color: var(--border-strong); font-weight: 500; }
+  button.btn:hover { opacity: .88; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .msg { font-size: 13px; padding: 9px 12px; border-radius: 8px; margin-top: 12px; display: none; }
+  .msg.ok { display: block; background: color-mix(in srgb, var(--good) 12%, transparent); color: var(--good); }
+  .msg.err { display: block; background: color-mix(in srgb, var(--critical) 12%, transparent); color: var(--critical); }
+  .legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 10px; }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+  .chart-wrap { position: relative; }
+  #tip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s;
+    background: var(--text-primary); color: var(--surface-1); font-size: 12px;
+    padding: 7px 9px; border-radius: 7px; white-space: nowrap; z-index: 20; font-variant-numeric: tabular-nums;
+  }
+  .empty { color: var(--text-muted); font-size: 13.5px; padding: 18px 0; }
+  .login { max-width: 400px; margin: 12vh auto; }
+  hr.sep { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+  .hint { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============ LOGIN ============ -->
+  <section id="login" class="login" hidden>
+    <div class="card">
+      <h1>Brandshippers · Ads tracker</h1>
+      <p class="sub">Log in met je e-mailadres. Je krijgt een inloglink toegestuurd.</p>
+      <div style="margin-top:16px">
+        <label for="email">E-mailadres</label>
+        <input id="email" type="email" autocomplete="email" placeholder="jij@voorbeeld.nl">
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="sendLink">Stuur inloglink</button>
+      </div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </section>
+
+  <!-- ============ APP ============ -->
+  <section id="app" hidden>
+    <header class="top">
+      <div>
+        <h1>Brandshippers · Ads tracker</h1>
+        <p class="sub" id="whoami"></p>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="themeBtn" title="Licht/donker">Donker</button>
+        <button class="btn ghost" id="signOut">Uitloggen</button>
+      </div>
+    </header>
+
+    <nav id="tabs">
+      <button data-tab="overzicht" aria-current="true">Overzicht</button>
+      <button data-tab="creatives">Creatives</button>
+      <button data-tab="hoeken">Hoeken</button>
+      <button data-tab="invoer">Invoer</button>
+      <button data-tab="betalingen">Betalingen</button>
+    </nav>
+
+    <!-- OVERZICHT -->
+    <div class="tab" id="tab-overzicht">
+      <div class="tiles" id="kpis"></div>
+
+      <div class="card">
+        <h2>Leads per week</h2>
+        <div class="legend">
+          <span><i style="background:var(--series-1)"></i>Gekwalificeerd (≥ €2.500 ruimte)</span>
+          <span><i style="background:var(--series-rest)"></i>Overige leads</span>
+        </div>
+        <div class="chart-wrap">
+          <div id="chart"></div>
+          <div id="tip"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Per week</h2>
+        <div class="scroll"><table id="weekTable"></table></div>
+      </div>
+    </div>
+
+    <!-- CREATIVES -->
+    <div class="tab" id="tab-creatives" hidden>
+      <div class="card">
+        <div class="row" style="justify-content:space-between; margin-bottom:12px">
+          <h2 style="margin:0">Prestatie per creative</h2>
+          <div class="row">
+            <select id="filterStatus" style="width:auto">
+              <option value="">Alle statussen</option>
+              <option value="concept">Concept</option>
+              <option value="in_productie">In productie</option>
+              <option value="live">Live</option>
+              <option value="gepauzeerd">Gepauzeerd</option>
+              <option value="gestopt">Gestopt</option>
+            </select>
+            <select id="filterRound" style="width:auto">
+              <option value="">Alle rondes</option>
+            </select>
+          </div>
+        </div>
+        <div class="scroll"><table id="creativeTable"></table></div>
+        <p class="hint">Klik op een rij om status, oordeel en reden bij te werken.</p>
+      </div>
+
+      <div class="card" id="creativeEdit" hidden>
+        <h2 id="ceTitle"></h2>
+        <div class="grid">
+          <div>
+            <label for="ceStatus">Status</label>
+            <select id="ceStatus">
+              <option value="concept">Concept</option>
+              <option value="in_productie">In productie</option>
+              <option value="live">Live</option>
+              <option value="gepauzeerd">Gepauzeerd</option>
+              <option value="gestopt">Gestopt</option>
+            </select>
+          </div>
+          <div>
+            <label for="ceVerdict">Werkte het?</label>
+            <select id="ceVerdict">
+              <option value="onbekend">Onbekend</option>
+              <option value="wel">Wel</option>
+              <option value="niet">Niet</option>
+            </select>
+          </div>
+          <div>
+            <label for="ceRound">Testronde</label>
+            <input id="ceRound" type="number" min="1" max="9">
+          </div>
+          <div>
+            <label for="ceLaunch">Startdatum</label>
+            <input id="ceLaunch" type="date">
+          </div>
+          <div>
+            <label for="ceMetaId">Meta ad-ID</label>
+            <input id="ceMetaId" type="text" placeholder="optioneel">
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label for="ceWhy">Waarom werkte het wel of niet</label>
+          <textarea id="ceWhy" style="min-height:70px"></textarea>
+        </div>
+        <div style="margin-top:12px">
+          <label for="ceKill">Reden om te stoppen</label>
+          <input id="ceKill" type="text" placeholder="bijv. frequentie boven 2,5 / geen gekwalificeerde leads">
+        </div>
+        <details style="margin-top:14px">
+          <summary>Copy van deze creative bekijken</summary>
+          <div id="ceCopy" style="margin-top:10px; font-size:13.5px; white-space:pre-wrap; color:var(--text-secondary)"></div>
+        </details>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="ceSave">Opslaan</button>
+          <button class="btn ghost" id="ceCancel">Sluiten</button>
+        </div>
+        <div class="msg" id="ceMsg"></div>
+      </div>
+    </div>
+
+    <!-- HOEKEN -->
+    <div class="tab" id="tab-hoeken" hidden>
+      <div class="card">
+        <h2>Prestatie per hoek</h2>
+        <p class="sub" style="margin-bottom:12px">Welke boodschap verkoopt. Beoordeel op kosten per gekwalificeerde lead, niet op CPL.</p>
+        <div class="scroll"><table id="angleTable"></table></div>
+      </div>
+      <div class="card">
+        <h2>Testrondes</h2>
+        <div class="scroll"><table id="roundTable"></table></div>
+      </div>
+    </div>
+
+    <!-- INVOER -->
+    <div class="tab" id="tab-invoer" hidden>
+      <div class="card">
+        <h2>Nieuwe lead</h2>
+        <div class="grid">
+          <div>
+            <label for="lCreative">Creative</label>
+            <select id="lCreative"></select>
+          </div>
+          <div>
+            <label for="lInvest">Investeringsruimte</label>
+            <select id="lInvest">
+              <option value="onbekend">Onbekend</option>
+              <option value="lt_1000">Onder €1.000</option>
+              <option value="1000_2500">€1.000 – €2.500</option>
+              <option value="2500_5000">€2.500 – €5.000</option>
+              <option value="gt_5000">Meer dan €5.000</option>
+            </select>
+          </div>
+          <div>
+            <label for="lSource">Bron</label>
+            <select id="lSource">
+              <option value="meta">Meta</option>
+              <option value="organisch">Organisch</option>
+              <option value="dm_vrijheid">DM VRIJHEID</option>
+              <option value="referral">Referral</option>
+              <option value="overig">Overig</option>
+            </select>
+          </div>
+          <div>
+            <label for="lCrm">CRM-id</label>
+            <input id="lCrm" type="text" placeholder="GHL / Pipedrive id">
+          </div>
+          <div>
+            <label for="lDate">Binnengekomen op</label>
+            <input id="lDate" type="date">
+          </div>
+          <div><button class="btn" id="lSave">Lead toevoegen</button></div>
+        </div>
+        <p class="hint">Geen namen, e-mailadressen of telefoonnummers invoeren. Die blijven in je CRM.</p>
+        <div class="msg" id="lMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Call loggen</h2>
+        <div class="grid">
+          <div>
+            <label for="cLead">Lead</label>
+            <select id="cLead"></select>
+          </div>
+          <div>
+            <label for="cType">Soort</label>
+            <select id="cType">
+              <option value="kwalificatie">Kwalificatiecall</option>
+              <option value="sales">Salescall</option>
+            </select>
+          </div>
+          <div>
+            <label for="cWhen">Gepland op</label>
+            <input id="cWhen" type="datetime-local">
+          </div>
+          <div>
+            <label for="cOutcome">Uitkomst</label>
+            <select id="cOutcome">
+              <option value="gepland">Gepland</option>
+              <option value="gehouden">Gehouden</option>
+              <option value="no_show">No-show</option>
+              <option value="geannuleerd">Geannuleerd</option>
+              <option value="verzet">Verzet</option>
+            </select>
+          </div>
+          <div><button class="btn" id="cSave">Call opslaan</button></div>
+        </div>
+        <div class="msg" id="cMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Verkoop loggen</h2>
+        <div class="grid">
+          <div>
+            <label for="sLead">Lead</label>
+            <select id="sLead"></select>
+          </div>
+          <div>
+            <label for="sAmount">Bedrag</label>
+            <input id="sAmount" type="number" step="0.01" value="3000">
+          </div>
+          <div>
+            <label for="sPlan">Aantal termijnen</label>
+            <select id="sPlan">
+              <option value="1">1 termijn</option>
+              <option value="2">2 termijnen</option>
+              <option value="3">3 termijnen</option>
+              <option value="4">4 termijnen</option>
+            </select>
+          </div>
+          <div>
+            <label for="sDate">Gesloten op</label>
+            <input id="sDate" type="date">
+          </div>
+          <div><button class="btn" id="sSave">Verkoop opslaan</button></div>
+        </div>
+        <p class="hint">De termijnen worden automatisch aangemaakt, maandelijks vanaf de sluitdatum.</p>
+        <div class="msg" id="sMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Dagcijfers uit Meta plakken</h2>
+        <p class="sub">Eén regel per creative per dag. Kolommen gescheiden door tab, komma of puntkomma:<br>
+          <code>creative-code · datum · spend · impressies · klikken · linkklikken</code></p>
+        <textarea id="statsPaste" placeholder="A1	2026-08-18	42,50	3120	61	38
+B1	2026-08-18	38,90	2870	54	31"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="statsSave">Importeren</button>
+          <button class="btn ghost" id="statsClear">Leegmaken</button>
+        </div>
+        <div class="msg" id="statsMsg"></div>
+      </div>
+    </div>
+
+    <!-- BETALINGEN -->
+    <div class="tab" id="tab-betalingen" hidden>
+      <div class="card">
+        <h2>Openstaande termijnen</h2>
+        <div class="scroll"><table id="payTable"></table></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://xerpxiypqxseebcdbsav.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OhKrmdbhYZcHukjTTwVCpg_cDxz9-Ti';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const eur = n => n == null ? '–' : '€' + Number(n).toLocaleString('nl-NL', {minimumFractionDigits:0, maximumFractionDigits:0});
+const eur2 = n => n == null ? '–' : '€' + Number(n).toLocaleString('nl-NL', {minimumFractionDigits:2, maximumFractionDigits:2});
+const num = n => n == null ? '–' : Number(n).toLocaleString('nl-NL');
+const pct = n => n == null ? '–' : Number(n).toLocaleString('nl-NL', {maximumFractionDigits:1}) + '%';
+const dmy = d => d ? new Date(d).toLocaleDateString('nl-NL', {day:'2-digit', month:'short'}) : '–';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg = (el, text, ok=true) => { const e=$(el); e.textContent=text; e.className='msg '+(ok?'ok':'err'); setTimeout(()=>{e.className='msg';}, 5000); };
+
+/* ---------- thema ---------- */
+const themeBtn = $('#themeBtn');
+const applyTheme = t => { document.documentElement.dataset.theme = t; themeBtn.textContent = t === 'dark' ? 'Licht' : 'Donker'; };
+applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+themeBtn.onclick = () => { const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(next); render(); };
+
+/* ---------- auth ---------- */
+$('#sendLink').onclick = async () => {
+  const email = $('#email').value.trim();
+  if (!email) return msg('#loginMsg', 'Vul je e-mailadres in.', false);
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0] } });
+  msg('#loginMsg', error ? error.message : 'Check je mail — de inloglink is onderweg.', !error);
+};
+$('#signOut').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+/* ---------- tabs ---------- */
+$$('#tabs button').forEach(b => b.onclick = () => {
+  $$('#tabs button').forEach(x => x.setAttribute('aria-current', String(x === b)));
+  $$('.tab').forEach(t => t.hidden = t.id !== 'tab-' + b.dataset.tab);
+});
+
+/* ---------- state ---------- */
+let D = { totals:null, weekly:[], creatives:[], perf:[], angles:[], rounds:[], leads:[], payments:[] };
+
+async function load() {
+  const [totals, weekly, perf, creatives, angles, rounds, leads, payments] = await Promise.all([
+    sb.from('v_funnel_totals').select('*').single(),
+    sb.from('v_weekly').select('*').limit(20),
+    sb.from('v_creative_performance').select('*').order('code'),
+    sb.from('creatives').select('*').order('code'),
+    sb.from('v_angle_performance').select('*').order('sort_order'),
+    sb.from('test_rounds').select('*').order('round_no'),
+    sb.from('leads').select('id, crm_id, arrived_at, invest_band, status, qualified, creative_id').order('arrived_at', {ascending:false}).limit(300),
+    sb.from('v_open_payments').select('*').limit(200),
+  ]);
+  D = {
+    totals: totals.data, weekly: weekly.data ?? [], perf: perf.data ?? [],
+    creatives: creatives.data ?? [], angles: angles.data ?? [], rounds: rounds.data ?? [],
+    leads: leads.data ?? [], payments: payments.data ?? [],
+  };
+}
+
+/* ---------- render ---------- */
+function render() { renderKpis(); renderChart(); renderWeek(); renderCreatives(); renderAngles(); renderRounds(); renderPayments(); fillSelects(); }
+
+function renderKpis() {
+  const t = D.totals; if (!t) return;
+  const cpql = t.qualified_leads ? t.spend / t.qualified_leads : null;
+  const cps  = t.sales ? t.spend / t.sales : null;
+  const roas = t.spend > 0 ? t.revenue / t.spend : null;
+  const qpct = t.leads ? 100 * t.qualified_leads / t.leads : null;
+  const tiles = [
+    ['Advertentiekosten', eur(t.spend), t.overige_kosten > 0 ? '+ ' + eur(t.overige_kosten) + ' overig' : ''],
+    ['Leads', num(t.leads), ''],
+    ['Gekwalificeerd', num(t.qualified_leads), qpct != null ? pct(qpct) + ' van alle leads' : '', true],
+    ['Kosten per gekwalificeerde lead', cpql != null ? eur(cpql) : '–', '', true],
+    ['Calls gehouden', num(t.calls_gehouden), ''],
+    ['Verkopen', num(t.sales), cps != null ? eur(cps) + ' per verkoop' : ''],
+    ['Omzet', eur(t.revenue), 'ontvangen ' + eur(t.ontvangen)],
+    ['ROAS', roas != null ? roas.toLocaleString('nl-NL', {maximumFractionDigits:2}) + '×' : '–', t.openstaand > 0 ? eur(t.openstaand) + ' openstaand' : ''],
+  ];
+  $('#kpis').innerHTML = tiles.map(([l, v, n, hero]) =>
+    `<div class="tile${hero ? ' hero' : ''}"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div>${n ? `<div class="note">${esc(n)}</div>` : ''}</div>`
+  ).join('');
+}
+
+function renderChart() {
+  const rows = [...D.weekly].reverse().slice(-14);
+  const host = $('#chart');
+  if (!rows.length || rows.every(r => !r.leads)) { host.innerHTML = '<p class="empty">Nog geen leads geregistreerd.</p>'; return; }
+
+  const W = Math.max(560, host.clientWidth || 900), H = 240;
+  const padL = 40, padR = 12, padT = 12, padB = 34;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const max = Math.max(4, ...rows.map(r => r.leads));
+  const niceMax = Math.ceil(max / 4) * 4;
+  const bw = Math.min(52, iw / rows.length - 10);
+  const step = iw / rows.length;
+  const y = v => padT + ih - (v / niceMax) * ih;
+
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = niceMax * i / 4, yy = y(v);
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="var(--border)" stroke-width="1"/>`;
+    g += `<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="var(--text-muted)">${v}</text>`;
+  }
+
+  let bars = '';
+  rows.forEach((r, i) => {
+    const x = padL + i * step + (step - bw) / 2;
+    const q = r.qualified_leads || 0, rest = (r.leads || 0) - q;
+    const yTop = y(r.leads), yQTop = y(q), base = y(0);
+    if (rest > 0) {
+      const h = Math.max(0, yQTop - yTop - 2);
+      bars += `<path d="M${x},${yTop+4} a4,4 0 0 1 4,-4 h${bw-8} a4,4 0 0 1 4,4 v${Math.max(0,h-4)} h-${bw} z" fill="var(--series-rest)"/>`;
+    }
+    if (q > 0) {
+      const h = base - yQTop;
+      const r4 = rest > 0 ? 0 : 4;
+      bars += `<path d="M${x},${yQTop+r4} a${r4},${r4} 0 0 1 ${r4},-${r4} h${bw-2*r4} a${r4},${r4} 0 0 1 ${r4},${r4} v${Math.max(0,h-r4)} h-${bw} z" fill="var(--series-1)"/>`;
+    }
+    bars += `<rect x="${padL + i*step}" y="${padT}" width="${step}" height="${ih}" fill="transparent"
+       data-i="${i}" class="hit" style="cursor:default"/>`;
+    bars += `<text x="${x + bw/2}" y="${H-14}" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">${dmy(r.week_start)}</text>`;
+    if (r.leads) bars += `<text x="${x + bw/2}" y="${yTop-6}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">${r.leads}</text>`;
+  });
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Leads per week, gesplitst naar gekwalificeerd">${g}${bars}</svg>`;
+
+  const tip = $('#tip');
+  host.querySelectorAll('.hit').forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const r = rows[+el.dataset.i];
+      tip.innerHTML = `<b>Week van ${dmy(r.week_start)}</b><br>${r.leads} leads · ${r.qualified_leads} gekwalificeerd<br>${eur2(r.spend)} besteed${r.cost_per_gekwalificeerde_lead ? ' · ' + eur2(r.cost_per_gekwalificeerde_lead) + ' per gekw.' : ''}`;
+      const b = host.getBoundingClientRect();
+      tip.style.left = Math.min(b.width - 200, e.clientX - b.left + 12) + 'px';
+      tip.style.top = (e.clientY - b.top - 50) + 'px';
+      tip.style.opacity = 1;
+    });
+    el.addEventListener('mouseleave', () => tip.style.opacity = 0);
+  });
+}
+
+function table(el, cols, rows, rowAttr) {
+  const head = '<thead><tr>' + cols.map(c => `<th class="${c.num?'num':''}">${esc(c.h)}</th>`).join('') + '</tr></thead>';
+  const body = '<tbody>' + (rows.length ? rows.map(r =>
+      `<tr ${rowAttr ? rowAttr(r) : ''}>` + cols.map(c => `<td class="${c.num?'num':''}">${c.f(r)}</td>`).join('') + '</tr>'
+    ).join('') : `<tr><td colspan="${cols.length}" class="empty">Nog geen gegevens.</td></tr>`) + '</tbody>';
+  $(el).innerHTML = head + body;
+}
+
+function renderWeek() {
+  table('#weekTable', [
+    {h:'Week',   f:r => dmy(r.week_start) + ' – ' + dmy(r.week_end)},
+    {h:'Spend',  num:1, f:r => eur2(r.spend)},
+    {h:'Leads',  num:1, f:r => num(r.leads)},
+    {h:'Gekwal.',num:1, f:r => num(r.qualified_leads)},
+    {h:'% gekwal.', num:1, f:r => pct(r.pct_gekwalificeerd)},
+    {h:'Kosten/gekwal.', num:1, f:r => r.cost_per_gekwalificeerde_lead ? eur2(r.cost_per_gekwalificeerde_lead) : '–'},
+    {h:'Calls',  num:1, f:r => num(r.calls_gehouden)},
+    {h:'Verkopen',num:1, f:r => num(r.sales)},
+    {h:'Omzet',  num:1, f:r => eur(r.revenue)},
+    {h:'ROAS',   num:1, f:r => r.roas ? r.roas + '×' : '–'},
+  ], D.weekly);
+}
+
+function renderCreatives() {
+  const st = $('#filterStatus').value, rd = $('#filterRound').value;
+  const rows = D.perf.filter(r => (!st || r.status === st) && (!rd || String(r.test_round) === rd));
+  table('#creativeTable', [
+    {h:'Code',   f:r => `<b>${esc(r.code)}</b>`},
+    {h:'Naam',   f:r => esc(r.name)},
+    {h:'Hoek',   f:r => esc(r.angle_code ?? '')},
+    {h:'Status', f:r => `<span class="tag ${esc(r.status)}">${esc((r.status||'').replace('_',' '))}</span>`},
+    {h:'Ronde',  num:1, f:r => r.test_round ?? '–'},
+    {h:'Spend',  num:1, f:r => eur2(r.spend)},
+    {h:'CTR',    num:1, f:r => pct(r.ctr_pct)},
+    {h:'Leads',  num:1, f:r => num(r.leads)},
+    {h:'Gekwal.',num:1, f:r => num(r.qualified_leads)},
+    {h:'% gekwal.', num:1, f:r => pct(r.pct_gekwalificeerd)},
+    {h:'Kosten/gekwal.', num:1, f:r => r.cost_per_gekwalificeerde_lead ? eur2(r.cost_per_gekwalificeerde_lead) : '–'},
+    {h:'Verkopen', num:1, f:r => num(r.sales)},
+    {h:'ROAS',   num:1, f:r => r.roas ? r.roas + '×' : '–'},
+    {h:'Oordeel',f:r => esc(r.verdict === 'onbekend' ? '' : r.verdict)},
+  ], rows, r => `data-id="${r.id}" style="cursor:pointer"`);
+
+  $('#creativeTable').querySelectorAll('tbody tr[data-id]').forEach(tr => tr.onclick = () => openCreative(+tr.dataset.id));
+
+  const rounds = [...new Set(D.perf.map(r => r.test_round).filter(Boolean))].sort();
+  const sel = $('#filterRound'), cur = sel.value;
+  sel.innerHTML = '<option value="">Alle rondes</option>' + rounds.map(r => `<option value="${r}">Ronde ${r}</option>`).join('');
+  sel.value = cur;
+}
+$('#filterStatus').onchange = renderCreatives;
+$('#filterRound').onchange = renderCreatives;
+
+let editingId = null;
+function openCreative(id) {
+  const c = D.creatives.find(x => x.id === id); if (!c) return;
+  editingId = id;
+  $('#ceTitle').textContent = c.code + ' · ' + c.name;
+  $('#ceStatus').value = c.status; $('#ceVerdict').value = c.verdict ?? 'onbekend';
+  $('#ceRound').value = c.test_round ?? ''; $('#ceLaunch').value = c.launch_date ?? '';
+  $('#ceMetaId').value = c.meta_ad_id ?? ''; $('#ceWhy').value = c.verdict_why ?? '';
+  $('#ceKill').value = c.kill_reason ?? '';
+  $('#ceCopy').textContent =
+    'OP HET BEELD\n' + (c.headline ?? '') + (c.subline ? '\n' + c.subline : '') +
+    '\n\nPRIMARY TEXT\n' + (c.primary_text ?? '') +
+    '\n\nHEADLINE-VELD\n' + (c.link_headline ?? '') +
+    '\n\nVISUAL\n' + (c.visual_brief ?? '');
+  $('#creativeEdit').hidden = false;
+  $('#creativeEdit').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+$('#ceCancel').onclick = () => { $('#creativeEdit').hidden = true; editingId = null; };
+$('#ceSave').onclick = async () => {
+  if (!editingId) return;
+  const patch = {
+    status: $('#ceStatus').value,
+    verdict: $('#ceVerdict').value,
+    test_round: $('#ceRound').value ? +$('#ceRound').value : null,
+    launch_date: $('#ceLaunch').value || null,
+    meta_ad_id: $('#ceMetaId').value.trim() || null,
+    verdict_why: $('#ceWhy').value.trim() || null,
+    kill_reason: $('#ceKill').value.trim() || null,
+  };
+  const { error } = await sb.from('creatives').update(patch).eq('id', editingId);
+  if (error) return msg('#ceMsg', error.message, false);
+  msg('#ceMsg', 'Opgeslagen.');
+  await load(); render();
+};
+
+function renderAngles() {
+  table('#angleTable', [
+    {h:'Hoek', f:r => `<b>${esc(r.angle_code)}</b> · ${esc(r.angle_name)}`},
+    {h:'Creatives', num:1, f:r => num(r.aantal_creatives)},
+    {h:'Spend', num:1, f:r => eur2(r.spend ?? 0)},
+    {h:'Leads', num:1, f:r => num(r.leads ?? 0)},
+    {h:'Gekwal.', num:1, f:r => num(r.qualified_leads ?? 0)},
+    {h:'% gekwal.', num:1, f:r => pct(r.pct_gekwalificeerd)},
+    {h:'Kosten/gekwal.', num:1, f:r => r.cost_per_gekwalificeerde_lead ? eur2(r.cost_per_gekwalificeerde_lead) : '–'},
+    {h:'Verkopen', num:1, f:r => num(r.sales ?? 0)},
+    {h:'Omzet', num:1, f:r => eur(r.revenue ?? 0)},
+    {h:'ROAS', num:1, f:r => r.roas ? r.roas + '×' : '–'},
+  ], D.angles);
+}
+
+function renderRounds() {
+  table('#roundTable', [
+    {h:'Ronde', f:r => 'Ronde ' + r.round_no},
+    {h:'Titel', f:r => esc(r.title)},
+    {h:'Start', f:r => dmy(r.started_on)},
+    {h:'Eind',  f:r => dmy(r.ended_on)},
+    {h:'Conclusie', f:r => esc(r.conclusion ?? '')},
+  ], D.rounds);
+}
+
+function renderPayments() {
+  table('#payTable', [
+    {h:'Vervalt', f:r => dmy(r.due_on) + (r.achterstallig ? ' <span class="tag gestopt">te laat</span>' : '')},
+    {h:'CRM-id', f:r => esc(r.crm_id ?? '–')},
+    {h:'Termijn', f:r => r.term_no + ' van ' + r.payment_plan},
+    {h:'Bedrag', num:1, f:r => eur2(r.amount)},
+    {h:'', f:r => `<button class="btn ghost" data-pay="${r.id}" style="padding:4px 10px; font-size:12.5px">Betaald</button>`},
+  ], D.payments);
+  $('#payTable').querySelectorAll('[data-pay]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.from('payments').update({ paid:true, paid_on:new Date().toISOString().slice(0,10) }).eq('id', +b.dataset.pay);
+    if (!error) { await load(); render(); }
+  });
+}
+
+function fillSelects() {
+  const opts = D.creatives.map(c => `<option value="${c.id}">${esc(c.code)} · ${esc(c.name)}</option>`).join('');
+  $('#lCreative').innerHTML = '<option value="">— geen / onbekend —</option>' + opts;
+  const leadOpts = D.leads.map(l => {
+    const c = D.creatives.find(x => x.id === l.creative_id);
+    return `<option value="${l.id}">${esc(l.crm_id || ('lead #' + l.id))} · ${dmy(l.arrived_at)}${c ? ' · ' + esc(c.code) : ''}</option>`;
+  }).join('');
+  $('#cLead').innerHTML = leadOpts || '<option value="">geen leads</option>';
+  $('#sLead').innerHTML = leadOpts || '<option value="">geen leads</option>';
+}
+
+/* ---------- invoer ---------- */
+$('#lSave').onclick = async () => {
+  const row = {
+    creative_id: $('#lCreative').value ? +$('#lCreative').value : null,
+    invest_band: $('#lInvest').value,
+    source: $('#lSource').value,
+    crm_id: $('#lCrm').value.trim() || null,
+  };
+  if ($('#lDate').value) row.arrived_at = new Date($('#lDate').value).toISOString();
+  const { error } = await sb.from('leads').insert(row);
+  if (error) return msg('#lMsg', error.message, false);
+  $('#lCrm').value = '';
+  msg('#lMsg', 'Lead toegevoegd.');
+  await load(); render();
+};
+
+$('#cSave').onclick = async () => {
+  if (!$('#cLead').value) return msg('#cMsg', 'Kies een lead.', false);
+  const { error } = await sb.from('calls').insert({
+    lead_id: +$('#cLead').value, call_type: $('#cType').value,
+    scheduled_at: $('#cWhen').value ? new Date($('#cWhen').value).toISOString() : new Date().toISOString(),
+    outcome: $('#cOutcome').value,
+  });
+  if (error) return msg('#cMsg', error.message, false);
+  msg('#cMsg', 'Call opgeslagen.');
+  await load(); render();
+};
+
+$('#sSave').onclick = async () => {
+  if (!$('#sLead').value) return msg('#sMsg', 'Kies een lead.', false);
+  const leadId = +$('#sLead').value;
+  const lead = D.leads.find(l => l.id === leadId);
+  const { error } = await sb.from('sales').insert({
+    lead_id: leadId, creative_id: lead?.creative_id ?? null,
+    amount: +$('#sAmount').value || 3000,
+    payment_plan: +$('#sPlan').value,
+    closed_on: $('#sDate').value || new Date().toISOString().slice(0,10),
+  });
+  if (error) return msg('#sMsg', error.message, false);
+  await sb.from('leads').update({ status:'gewonnen' }).eq('id', leadId);
+  msg('#sMsg', 'Verkoop opgeslagen, termijnen aangemaakt.');
+  await load(); render();
+};
+
+$('#statsClear').onclick = () => $('#statsPaste').value = '';
+$('#statsSave').onclick = async () => {
+  const lines = $('#statsPaste').value.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return msg('#statsMsg', 'Niets om te importeren.', false);
+  const byCode = Object.fromEntries(D.creatives.map(c => [c.code.toUpperCase(), c.id]));
+  const rows = [], bad = [];
+  for (const line of lines) {
+    const p = line.split(/[\t;,](?![^"]*"\s*$)/).map(s => s.trim().replace(/^"|"$/g, ''));
+    if (p.length < 3) { bad.push(line); continue; }
+    const id = byCode[p[0].toUpperCase()];
+    if (!id) { bad.push(line); continue; }
+    const n = v => { const x = parseFloat(String(v ?? '0').replace(/\./g,'').replace(',', '.')); return isNaN(x) ? 0 : x; };
+    rows.push({
+      creative_id: id, stat_date: p[1],
+      spend: n(p[2]), impressions: Math.round(n(p[3])), clicks: Math.round(n(p[4])),
+      link_clicks: Math.round(n(p[5])),
+    });
+  }
+  if (!rows.length) return msg('#statsMsg', 'Geen bruikbare regels. Controleer of de creative-codes kloppen.', false);
+  const { error } = await sb.from('ad_stats_daily').upsert(rows, { onConflict: 'creative_id,stat_date' });
+  if (error) return msg('#statsMsg', error.message, false);
+  msg('#statsMsg', `${rows.length} regel(s) geïmporteerd${bad.length ? `, ${bad.length} overgeslagen` : ''}.`);
+  $('#statsPaste').value = bad.join('\n');
+  await load(); render();
+};
+
+/* ---------- start ---------- */
+const { data:{ session } } = await sb.auth.getSession();
+sb.auth.onAuthStateChange((_e, s) => { if (s && $('#app').hidden) location.reload(); });
+
+if (!session) {
+  $('#login').hidden = false;
+} else {
+  const { count, error } = await sb.from('access_grants').select('email', { count:'exact', head:true });
+  if (error || count === 0) {
+    $('#login').hidden = false;
+    msg('#loginMsg', 'Dit account heeft geen toegang. Vraag Ruben om je e-mailadres toe te voegen.', false);
+    await sb.auth.signOut();
+  } else {
+    $('#app').hidden = false;
+    $('#whoami').textContent = session.user.email;
+    $('#lDate').value = new Date().toISOString().slice(0,10);
+    $('#sDate').value = new Date().toISOString().slice(0,10);
+    await load(); render();
+    addEventListener('resize', () => renderChart());
+  }
+}
+</script>
+</body>
+</html>
