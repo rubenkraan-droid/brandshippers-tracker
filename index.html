@@ -1025,26 +1025,47 @@ $('#statsSave').onclick = async () => {
 };
 
 /* ---------- start ---------- */
-const { data:{ session } } = await sb.auth.getSession();
-sb.auth.onAuthStateChange((_e, s) => { if (s && $('#app').hidden) location.reload(); });
-
-if (!session) {
+function showLogin(text) {
+  $('#app').hidden = true;
   $('#login').hidden = false;
-} else {
-  const { count, error } = await sb.from('access_grants').select('email', { count:'exact', head:true });
-  if (error || count === 0) {
-    $('#login').hidden = false;
-    msg('#loginMsg', 'Dit account heeft geen toegang. Vraag Ruben om je e-mailadres toe te voegen.', false);
-    await sb.auth.signOut();
+  if (text) msg('#loginMsg', text, false);
+}
+
+try {
+  const { data:{ session } } = await sb.auth.getSession();
+
+  // Alleen op uitloggen reageren. NIET herladen bij een binnenkomende sessie:
+  // supabase vuurt bij het laden van de pagina al een auth-event af, en dat
+  // zou een eindeloze reload-lus opleveren.
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') showLogin();
+  });
+
+  if (!session) {
+    showLogin();
   } else {
-    $('#app').hidden = false;
-    $('#whoami').textContent = session.user.email;
-    $('#lDate').value = new Date().toISOString().slice(0,10);
-    $('#sDate').value = new Date().toISOString().slice(0,10);
-    $('#ssDate').value = new Date().toISOString().slice(0,10);
-    await load(); render();
-    addEventListener('resize', () => { renderChart(); if (openSeq) openStory(openSeq); });
+    const { count, error } = await sb.from('access_grants').select('email', { count:'exact', head:true });
+    if (error) {
+      showLogin('Inloggen lukte, maar de gegevens zijn niet op te halen: ' + error.message);
+      await sb.auth.signOut();
+    } else if (!count) {
+      showLogin('Dit account heeft geen toegang. Voeg ' + session.user.email + ' toe aan access_grants.');
+      await sb.auth.signOut();
+    } else {
+      $('#app').hidden = false;
+      $('#whoami').textContent = session.user.email;
+      const vandaag = new Date().toISOString().slice(0,10);
+      $('#lDate').value = vandaag;
+      $('#sDate').value = vandaag;
+      $('#ssDate').value = vandaag;
+      await load();
+      render();
+      addEventListener('resize', () => { renderChart(); if (openSeq) openStory(openSeq); });
+    }
   }
+} catch (err) {
+  // Nooit een wit scherm achterlaten
+  showLogin('Er ging iets mis bij het laden: ' + (err && err.message ? err.message : err));
 }
 </script>
 </body>
