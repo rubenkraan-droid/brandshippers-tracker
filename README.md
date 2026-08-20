@@ -131,7 +131,7 @@ een SMTP-provider onder Authentication → Emails.
 | `sales` | Verkopen met bedrag en aantal termijnen |
 | `payments` | De termijnen, automatisch aangemaakt bij een verkoop |
 | `story_sequences` | Een story-reeks: het verhaal, de hoek, de CTA en de reach |
-| `story_frames` | Per frame: views, exits, weggetikt, linkkliks, reacties |
+| `story_frames` | Per frame: views, exits, weggetikt, linkkliks, reacties, screenshot |
 | `other_costs` | Kosten buiten Meta om |
 | `access_grants` | Wie mag inloggen en wie mag bewerken |
 
@@ -175,6 +175,13 @@ het dashboard rekent zelf uit hoeveel procent van de starters er nog kijkt
    (dezelfde A t/m G als de advertenties) en de reach
 2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · weggetikt · hook`
 3. Klik de sequence aan om de afvalrate per frame te zien
+
+**Screenshots.** Klik in de filmstrip op een frame om de screenshot toe te voegen.
+Die komt in de privé Storage-bucket `story-frames` en is alleen zichtbaar voor wie
+is ingelogd. De browser verkleint het beeld eerst naar maximaal 720px breed en
+slaat het op als JPEG — een ruwe telefoonscreenshot van ~2 MB wordt zo ~80 kB.
+Bij vijf frames per week kost dat ongeveer 20 MB per jaar; de gratis 1 GB is dus
+ruim vijftig jaar genoeg.
 
 Waar je op let: het frame met de hoogste afvalrate is waar je verhaal het publiek
 kwijtraakt. Zit dat bij frame 1 of 2, dan klopt je opening niet. Zit het vlak voor
