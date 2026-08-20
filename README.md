@@ -59,19 +59,35 @@ Voeg één record toe:
 Let op: de waarde eindigt op `.github.io`, niet op de repo-naam.
 Propagatie duurt meestal 5–30 minuten.
 
-### 4. Supabase Auth op het nieuwe domein zetten
+### 4. Supabase Auth instellen
 
-Zonder deze stap komen de inloglinks op de verkeerde URL uit.
+Inloggen gaat met **e-mailadres en wachtwoord**, niet met inloglinks.
 
-Supabase dashboard → project `brandshippers-ads` → **Authentication** → **URL Configuration**
-- **Site URL:** `https://brandshippers.recraparcs.nl`
-- **Redirect URLs:** voeg toe `https://brandshippers.recraparcs.nl/**`
+Supabase dashboard → project `brandshippers-ads`:
 
-### 5. Jezelf en anderen toegang geven
+**Authentication → URL Configuration**
+- Site URL: `https://brandshippers.recraparcs.nl`
 
-Je eigen adres staat er al in. Iemand toevoegen:
+**Authentication → Sign In / Providers → Email**
+- Email provider: aan
+- "Confirm email": uit (anders moet elk nieuw account nog per mail bevestigd worden)
+- "Allow new users to sign up": **uit** — accounts maak je zelf aan, niemand meldt zich hier aan
 
-Supabase → **Table editor** → `access_grants` → rij toevoegen:
+### 5. Accounts aanmaken
+
+Toegang bestaat uit twee losse dingen: een **account** om in te loggen, en een
+**grant** die bepaalt wat je mag zien. Je hebt allebei nodig.
+
+**Account:** Supabase → **Authentication** → **Users** → **Add user** →
+**Create new user**. Vul het e-mailadres in, kies een wachtwoord en vink
+**Auto Confirm User** aan. Geef het wachtwoord door via een kanaal waar je het
+daarna weer kunt weghalen — niet per gewone mail.
+
+Wachtwoord vergeten of wijzigen: bij die gebruiker op de drie puntjes →
+**Reset password** of **Update user**. Je hoeft daar geen inloglinks voor aan te
+zetten.
+
+**Grant:** Supabase → **Table editor** → `access_grants` → rij toevoegen:
 
 | kolom      | waarde                          |
 |------------|---------------------------------|

@@ -121,15 +121,22 @@
   <section id="login" class="login" hidden>
     <div class="card">
       <h1>Brandshippers · Ads tracker</h1>
-      <p class="sub">Log in met je e-mailadres. Je krijgt een inloglink toegestuurd.</p>
-      <div style="margin-top:16px">
-        <label for="email">E-mailadres</label>
-        <input id="email" type="email" autocomplete="email" placeholder="jij@voorbeeld.nl">
-      </div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn" id="sendLink">Stuur inloglink</button>
-      </div>
+      <p class="sub">Log in met je e-mailadres en wachtwoord.</p>
+      <form id="loginForm" autocomplete="on">
+        <div style="margin-top:16px">
+          <label for="email">E-mailadres</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="jij@voorbeeld.nl" required>
+        </div>
+        <div style="margin-top:12px">
+          <label for="password">Wachtwoord</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="loginBtn" type="submit">Inloggen</button>
+        </div>
+      </form>
       <div class="msg" id="loginMsg"></div>
+      <p class="hint" style="margin-top:14px">Wachtwoord kwijt? Vraag Ruben om er een nieuwe voor je in te stellen.</p>
     </div>
   </section>
 
@@ -493,11 +500,25 @@ applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 themeBtn.onclick = () => { const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(next); render(); };
 
 /* ---------- auth ---------- */
-$('#sendLink').onclick = async () => {
+$('#loginForm').onsubmit = async (e) => {
+  e.preventDefault();
   const email = $('#email').value.trim();
-  if (!email) return msg('#loginMsg', 'Vul je e-mailadres in.', false);
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0] } });
-  msg('#loginMsg', error ? error.message : 'Check je mail — de inloglink is onderweg.', !error);
+  const password = $('#password').value;
+  if (!email || !password) return msg('#loginMsg', 'Vul je e-mailadres en wachtwoord in.', false);
+  const btn = $('#loginBtn');
+  btn.disabled = true; btn.textContent = 'Bezig…';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Inloggen';
+  if (error) {
+    const nl = /invalid login credentials/i.test(error.message)
+      ? 'E-mailadres of wachtwoord klopt niet.'
+      : /email not confirmed/i.test(error.message)
+      ? 'Dit account is nog niet bevestigd. Vraag Ruben om het te activeren.'
+      : error.message;
+    $('#password').value = '';
+    return msg('#loginMsg', nl, false);
+  }
+  location.reload();
 };
 $('#signOut').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
