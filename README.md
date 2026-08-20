@@ -176,7 +176,12 @@ het dashboard rekent zelf uit hoeveel procent van de starters er nog kijkt
 2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · weggetikt · hook`
 3. Klik de sequence aan om de afvalrate per frame te zien
 
-**Screenshots.** Klik in de filmstrip op een frame om de screenshot toe te voegen.
+**Screenshots in één keer.** Sleep alle screenshots van een sequence tegelijk op de
+filmstrip, of klik "Screenshots kiezen" en selecteer ze allemaal. Ze worden op
+volgorde van bestandsnaam aan frame 1, 2, 3… gekoppeld — telefoonscreenshots zijn
+op tijd genummerd, dus dat is meteen de goede volgorde. Zijn er meer afbeeldingen
+dan frames, dan maakt hij de ontbrekende frames zelf aan; de views vul je daarna
+in via "Frames invoeren". Losse screenshot vervangen: klik op dat ene frame.
 Die komt in de privé Storage-bucket `story-frames` en is alleen zichtbaar voor wie
 is ingelogd. De browser verkleint het beeld eerst naar maximaal 720px breed en
 slaat het op als JPEG — een ruwe telefoonscreenshot van ~2 MB wordt zo ~80 kB.

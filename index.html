@@ -107,6 +107,14 @@
     padding: 7px 9px; border-radius: 7px; white-space: nowrap; z-index: 20; font-variant-numeric: tabular-nums;
   }
 
+  .dropzone {
+    border: 1.5px dashed var(--border-strong); border-radius: 10px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-bottom: 12px; transition: background .12s, border-color .12s; flex-wrap: wrap;
+  }
+  .dropzone.over { border-color: var(--series-1); background: var(--accent-soft); }
+  .dropzone p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+  .dropzone p b { color: var(--text-primary); }
   .film { display: flex; gap: 0; overflow-x: auto; padding: 4px 0 10px; align-items: stretch; }
   .film-frame { flex: 0 0 148px; }
   .film-shot {
@@ -319,9 +327,14 @@
         <p class="sub" id="sdSub" style="margin-bottom:14px"></p>
         <div class="tiles" id="sdKpis"></div>
         <h2 style="margin-top:6px">Wie kijkt er nog mee</h2>
-        <p class="sub" style="margin:-8px 0 10px">Klik op een frame om de screenshot toe te voegen of te vervangen.</p>
+        <div class="dropzone" id="dropzone">
+          <p><b>Sleep alle screenshots hier naartoe</b> — of kies ze in één keer.
+             Ze worden op volgorde van bestandsnaam aan frame 1, 2, 3… gekoppeld.</p>
+          <button class="btn ghost" id="bulkBtn" style="padding:7px 14px">Screenshots kiezen</button>
+        </div>
         <div class="film" id="storyFilm"></div>
         <input type="file" id="frameFile" accept="image/*" hidden>
+        <input type="file" id="bulkFile" accept="image/*" multiple hidden>
         <div class="msg" id="filmMsg"></div>
         <div class="scroll" style="margin-top:8px"><table id="frameTable"></table></div>
       </div>
@@ -959,28 +972,94 @@ $('#frameFile').onchange = async (e) => {
   if (file.size > 10 * 1024 * 1024) return msg('#filmMsg', 'Dit bestand is groter dan 10 MB.', false);
 
   msg('#filmMsg', 'Bezig met verkleinen en uploaden…');
+  try {
+    const bytes = await uploadNaarFrame(frame, file);
+    msg('#filmMsg', `Screenshot van frame ${frame.frame_no} opgeslagen (${Math.round(bytes / 1024)} kB).`);
+  } catch (err) {
+    return msg('#filmMsg', 'Mislukt: ' + err.message, false);
+  }
+  await load();
+  if (openSeq) openStory(openSeq);
+};
+
+
+/* ---------- meerdere screenshots in één keer ---------- */
+async function uploadNaarFrame(frame, file) {
   const { blob, ext, type } = await verkleinAfbeelding(file);
   const path = `${frame.sequence_id}/frame-${frame.frame_no}.${ext}`;
-
-  const { error: upErr } = await sb.storage.from('story-frames')
+  const { error } = await sb.storage.from('story-frames')
     .upload(path, blob, { upsert: true, contentType: type || 'image/jpeg' });
-  if (upErr) return msg('#filmMsg', 'Uploaden mislukt: ' + upErr.message, false);
-  const kb = Math.round(blob.size / 1024);
-
-  // oud bestand met een andere extensie opruimen
+  if (error) throw new Error(`frame ${frame.frame_no}: ${error.message}`);
   if (frame.image_path && frame.image_path !== path) {
     await sb.storage.from('story-frames').remove([frame.image_path]);
     __signed.delete(frame.image_path);
   }
   __signed.delete(path);
+  const { error: dbErr } = await sb.from('story_frames').update({ image_path: path }).eq('id', frame.id);
+  if (dbErr) throw new Error(`frame ${frame.frame_no}: ${dbErr.message}`);
+  return blob.size;
+}
 
-  const { error: dbErr } = await sb.from('story_frames').update({ image_path: path }).eq('id', fid);
-  if (dbErr) return msg('#filmMsg', 'Opslaan mislukt: ' + dbErr.message, false);
+async function bulkUpload(fileList) {
+  if (!openSeq) return;
+  const files = [...fileList]
+    .filter(f => f.type.startsWith('image/'))
+    .sort((a, b) => a.name.localeCompare(b.name, 'nl', { numeric: true, sensitivity: 'base' }));
+  if (!files.length) return msg('#filmMsg', 'Geen afbeeldingen gevonden.', false);
 
-  msg('#filmMsg', `Screenshot van frame ${frame.frame_no} opgeslagen (${kb} kB).`);
+  // ontbrekende frames aanmaken, zodat er nooit een screenshot verloren gaat
+  let frames = D.frames.filter(f => f.sequence_id === openSeq).sort((a, b) => a.frame_no - b.frame_no);
+  if (files.length > frames.length) {
+    const nieuw = [];
+    for (let n = frames.length + 1; n <= files.length; n++) nieuw.push({ sequence_id: openSeq, frame_no: n, views: 0 });
+    const { error } = await sb.from('story_frames')
+      .upsert(nieuw, { onConflict: 'sequence_id,frame_no', ignoreDuplicates: true });
+    if (error) return msg('#filmMsg', 'Frames aanmaken mislukt: ' + error.message, false);
+    await load();
+    frames = D.frames.filter(f => f.sequence_id === openSeq).sort((a, b) => a.frame_no - b.frame_no);
+  }
+
+  let klaar = 0, bytes = 0;
+  const fouten = [];
+  for (const [i, file] of files.entries()) {
+    const frame = frames[i];
+    if (!frame) break;
+    msg('#filmMsg', `Bezig… ${i + 1} van ${files.length}`);
+    try { bytes += await uploadNaarFrame(frame, file); klaar++; }
+    catch (err) { fouten.push(err.message); }
+  }
+
   await load();
   if (openSeq) openStory(openSeq);
-};
+  const kb = Math.round(bytes / 1024);
+  msg('#filmMsg',
+    fouten.length ? `${klaar} van ${files.length} gelukt. Mislukt: ${fouten.join('; ')}`
+                  : `${klaar} screenshot(s) geplaatst, samen ${kb} kB.`,
+    !fouten.length);
+}
+
+$('#bulkBtn').onclick = () => { const i = $('#bulkFile'); i.value = ''; i.click(); };
+$('#bulkFile').onchange = (e) => { if (e.target.files?.length) bulkUpload(e.target.files); };
+
+const dz = $('#dropzone');
+['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); e.stopPropagation(); dz.classList.add('over');
+}));
+['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); e.stopPropagation();
+  if (ev === 'dragleave' && dz.contains(e.relatedTarget)) return;
+  dz.classList.remove('over');
+}));
+dz.addEventListener('drop', e => { if (e.dataTransfer?.files?.length) bulkUpload(e.dataTransfer.files); });
+
+// ook loslaten op de filmstrip zelf
+const filmHost = $('#storyFilm');
+['dragenter', 'dragover'].forEach(ev => filmHost.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+filmHost.addEventListener('dragleave', () => dz.classList.remove('over'));
+filmHost.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  if (e.dataTransfer?.files?.length) bulkUpload(e.dataTransfer.files);
+});
 
 $('#ssSave').onclick = async () => {
   const code = $('#ssCode').value.trim(), title = $('#ssTitle').value.trim();
