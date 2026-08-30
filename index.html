@@ -98,6 +98,26 @@
   .msg { font-size: 13px; padding: 9px 12px; border-radius: 8px; margin-top: 12px; display: none; }
   .msg.ok { display: block; background: color-mix(in srgb, var(--good) 12%, transparent); color: var(--good); }
   .msg.err { display: block; background: color-mix(in srgb, var(--critical) 12%, transparent); color: var(--critical); }
+  /* bewerkbare cel: pas een rand als je erover hovert of erin staat */
+  .cel {
+    font: inherit; font-size: 13.5px; padding: 4px 6px; width: 100%;
+    border: 1px solid transparent; border-radius: 6px;
+    background: transparent; color: var(--text-primary);
+  }
+  .cel:hover { border-color: var(--border); }
+  .cel:focus { border-color: var(--border-strong); background: var(--surface-1); outline: none; }
+  .cel.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cel[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+  .cel::-webkit-outer-spin-button, .cel::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  /* verwijderen vraagt een tweede klik; de gewapende staat is rood */
+  .rm {
+    font: inherit; font-size: 12px; line-height: 1; width: auto; cursor: pointer;
+    padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--text-muted);
+  }
+  .rm:hover { border-color: var(--critical); color: var(--critical); }
+  .rm.armed { border-color: var(--critical); background: var(--critical); color: #fff; }
+  button.btn.ghost.armed { border-color: var(--critical); color: var(--critical); font-weight: 600; }
   .legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 10px; }
   .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
   .chart-wrap { position: relative; }
@@ -322,7 +342,10 @@
       <div class="card" id="storyDetail" hidden>
         <div class="row" style="justify-content:space-between; margin-bottom:4px">
           <h2 id="sdTitle" style="margin:0"></h2>
-          <button class="btn ghost" id="sdClose" style="padding:5px 12px; font-size:13px">Sluiten</button>
+          <div class="row">
+            <button class="btn ghost" id="sdDelete" style="padding:5px 12px; font-size:13px">Sequence verwijderen</button>
+            <button class="btn ghost" id="sdClose" style="padding:5px 12px; font-size:13px">Sluiten</button>
+          </div>
         </div>
         <p class="sub" id="sdSub" style="margin-bottom:14px"></p>
         <div class="tiles" id="sdKpis"></div>
@@ -847,6 +870,18 @@ function renderStories() {
     tr.onclick = () => openStory(+tr.dataset.sid));
 }
 
+/* ---------- bewerkbare cellen in de frametabel ---------- */
+const MEDIA_TYPES = ['foto', 'video', 'tekst', 'poll', 'quiz', 'link'];
+const getalCel = (f, veld) =>
+  `<input class="cel num" type="number" min="0" step="1" data-fid="${f.id}" data-veld="${veld}" value="${f[veld] ?? 0}">`;
+const tekstCel = (f, veld) =>
+  `<input class="cel" type="text" data-fid="${f.id}" data-veld="${veld}" value="${esc(f[veld] ?? '')}">`;
+const typeCel = f =>
+  `<select class="cel" data-fid="${f.id}" data-veld="media_type">` +
+  ['', ...MEDIA_TYPES].map(t =>
+    `<option value="${t}"${(f.media_type ?? '') === t ? ' selected' : ''}>${t || '–'}</option>`).join('') +
+  '</select>';
+
 let openSeq = null;
 function openStory(id) {
   const s = D.stories.find(x => x.id === id); if (!s) return;
@@ -875,23 +910,139 @@ function openStory(id) {
 
   table('#frameTable', [
     {h:'#',        f:f => `<b>${f.frame_no}</b>`},
-    {h:'Hook',     f:f => esc(f.hook ?? '')},
-    {h:'Type',     f:f => esc(f.media_type ?? '')},
-    {h:'Views',    num:1, f:f => num(f.views)},
+    {h:'Hook',     f:f => tekstCel(f, 'hook')},
+    {h:'Type',     f:f => typeCel(f)},
+    {h:'Views',    num:1, f:f => getalCel(f, 'views')},
     {h:'Retentie', num:1, f:f => pct(f.retentie_pct)},
     {h:'Afval hierna', num:1, f:f => f.views_volgend_frame == null ? '–' : pct(f.afvalrate_pct)},
     {h:'Kwijt',    num:1, f:f => f.views_volgend_frame == null ? '–' : num(f.verlies_absoluut)},
-    {h:'Exits',    num:1, f:f => num(f.exited)},
-    {h:'Weggetikt',num:1, f:f => num(f.next_story)},
-    {h:'Kliks',    num:1, f:f => num(f.link_clicks)},
+    {h:'Exits',    num:1, f:f => getalCel(f, 'exited')},
+    {h:'Weggetikt',num:1, f:f => getalCel(f, 'next_story')},
+    {h:'Kliks',    num:1, f:f => getalCel(f, 'link_clicks')},
     {h:'Klikrate', num:1, f:f => pct(f.klikrate_pct)},
-    {h:'Reacties', num:1, f:f => num(f.replies)},
+    {h:'Reacties', num:1, f:f => getalCel(f, 'replies')},
+    {h:'',         f:f => `<button class="rm" data-fid="${f.id}" title="Frame ${f.frame_no} verwijderen">Verwijder</button>`},
   ], frames);
 
   $('#storyDetail').hidden = false;
   $('#storyDetail').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
-$('#sdClose').onclick = () => { $('#storyDetail').hidden = true; openSeq = null; };
+$('#sdClose').onclick = () => { ontwapen(); $('#storyDetail').hidden = true; openSeq = null; };
+
+/* ---------- bewerken ---------- */
+/* Opslaan zodra je de cel verlaat; daarna opnieuw laden zodat de afgeleide
+   cijfers en de filmstrip weer kloppen. */
+$('#frameTable').addEventListener('change', async (e) => {
+  const cel = e.target.closest('.cel');
+  if (!cel) return;
+  const id = +cel.dataset.fid, veld = cel.dataset.veld;
+
+  let waarde;
+  if (veld === 'hook')            waarde = cel.value.trim() || null;
+  else if (veld === 'media_type') waarde = cel.value || null;
+  else {
+    waarde = Math.max(0, Math.floor(Number(cel.value) || 0));
+    cel.value = waarde;
+  }
+
+  const { error } = await sb.from('story_frames').update({ [veld]: waarde }).eq('id', id);
+  if (error) return msg('#filmMsg', 'Opslaan mislukt: ' + error.message, false);
+
+  // de cursor staat inmiddels een cel verder; die pakken we na het hertekenen terug
+  const naar = document.activeElement;
+  const naarFid = naar?.dataset?.fid, naarVeld = naar?.dataset?.veld;
+
+  await load();
+  render();
+  if (openSeq) openStory(openSeq);
+
+  if (naarFid && naarVeld) {
+    const terug = $(`#frameTable .cel[data-fid="${naarFid}"][data-veld="${naarVeld}"]`);
+    if (terug) { terug.focus(); terug.select?.(); }
+  }
+});
+
+/* ---------- verwijderen ---------- */
+/* Geen confirm(): de eerste klik wapent de knop, een tweede klik voert uit.
+   Na een paar seconden valt de knop vanzelf terug. */
+let wapenTimer = null;
+function ontwapen() {
+  clearTimeout(wapenTimer); wapenTimer = null;
+  $$('.armed').forEach(b => { b.textContent = b.dataset.rust ?? b.textContent; b.classList.remove('armed'); });
+}
+function wapen(btn, tekst) {
+  ontwapen();
+  btn.dataset.rust = btn.textContent;
+  btn.textContent = tekst;
+  btn.classList.add('armed');
+  wapenTimer = setTimeout(ontwapen, 4000);
+}
+
+$('#frameTable').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.rm');
+  if (!btn) return;
+  const frame = D.frames.find(f => f.id === +btn.dataset.fid);
+  if (!frame) return;
+  if (!btn.classList.contains('armed')) return wapen(btn, 'Zeker weten?');
+  ontwapen();
+
+  try {
+    if (frame.image_path) {
+      const { error } = await sb.storage.from('story-frames').remove([frame.image_path]);
+      if (error) throw new Error(error.message);
+      __signed.delete(frame.image_path);
+    }
+    const { error } = await sb.from('story_frames').delete().eq('id', frame.id);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    return msg('#filmMsg', 'Verwijderen mislukt: ' + err.message, false);
+  }
+
+  await load();
+  render();
+  if (openSeq) openStory(openSeq);
+  msg('#filmMsg', `Frame ${frame.frame_no} verwijderd.`);
+});
+
+$('#sdDelete').onclick = async () => {
+  const btn = $('#sdDelete');
+  if (!openSeq) return;
+
+  if (!btn.classList.contains('armed')) {
+    const frames = D.frames.filter(f => f.sequence_id === openSeq).length;
+    const leads  = D.leads.filter(l => l.story_sequence_id === openSeq).length;
+    wapen(btn, 'Zeker weten?');
+    return msg('#filmMsg',
+      `Dit verwijdert de sequence en ${frames} frame(s) met hun screenshots. ` +
+      `${leads} lead(s) houden hun rij, maar raken de koppeling met deze sequence kwijt. ` +
+      `Klik nog een keer om door te zetten.`, false);
+  }
+  ontwapen();
+
+  const sid = openSeq;
+  try {
+    // eerst de screenshots onder <sequence_id>/ uit de bucket
+    const { data: bestanden, error: lijstErr } = await sb.storage.from('story-frames').list(String(sid));
+    if (lijstErr) throw new Error(lijstErr.message);
+    const paden = (bestanden ?? []).map(b => `${sid}/${b.name}`);
+    if (paden.length) {
+      const { error } = await sb.storage.from('story-frames').remove(paden);
+      if (error) throw new Error(error.message);
+      paden.forEach(pad => __signed.delete(pad));
+    }
+    // daarna de sequence zelf; de frames cascaden mee
+    const { error } = await sb.from('story_sequences').delete().eq('id', sid);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    return msg('#filmMsg', 'Verwijderen mislukt: ' + err.message, false);
+  }
+
+  $('#storyDetail').hidden = true;
+  openSeq = null;
+  await load();
+  render();
+  msg('#ssMsg', 'Sequence verwijderd.');
+};
 
 const __signed = new Map();
 

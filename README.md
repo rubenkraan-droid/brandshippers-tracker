@@ -188,6 +188,19 @@ slaat het op als JPEG — een ruwe telefoonscreenshot van ~2 MB wordt zo ~80 kB.
 Bij vijf frames per week kost dat ongeveer 20 MB per jaar; de gratis 1 GB is dus
 ruim vijftig jaar genoeg.
 
+**Cijfers bijwerken en weggooien.** De frametabel onder de filmstrip is
+bewerkbaar: views, exits, weggetikt, kliks en reacties typ je rechtstreeks in de
+cel, en hook en type pas je daar ook aan. Elke wijziging wordt opgeslagen zodra je
+de cel verlaat, waarna retentie, afvalrate en de filmstrip meteen opnieuw worden
+gerekend — doortabben door de tabel blijft gewoon werken. Retentie, afval hierna,
+kwijt en klikrate leidt het dashboard zelf af en kun je dus niet bewerken.
+Een frame gooi je weg met de knop achter de rij, een heel verhaal met "Sequence
+verwijderen" bovenin het detailpaneel; in beide gevallen gaan de screenshots uit de
+bucket mee. Er komt geen dialoogvenster aan te pas: de eerste klik wapent de knop,
+een tweede klik voert uit, en na een paar seconden valt hij vanzelf terug. Bij een
+sequence zie je eerst hoeveel frames en leads eraan hangen — die leads blijven
+bestaan, maar raken hun koppeling met dit verhaal kwijt.
+
 Waar je op let: het frame met de hoogste afvalrate is waar je verhaal het publiek
 kwijtraakt. Zit dat bij frame 1 of 2, dan klopt je opening niet. Zit het vlak voor
 de CTA, dan is de opbouw te lang. Doordat sequences dezelfde hoeken gebruiken als
