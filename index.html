@@ -392,7 +392,7 @@
           <div><label for="sfSeq">Sequence</label><select id="sfSeq"></select></div>
         </div>
         <p class="sub">Eén regel per frame, gescheiden door tab, komma of puntkomma:<br>
-          <code>framenr · views · linkkliks · exits · weggetikt · hook</code></p>
+          <code>framenr · views · linkkliks · exits · next story · hook</code></p>
         <textarea id="framePaste" placeholder="1	3810	0	120	260	Twee jaar geleden stond ik hier nog vakken te vullen
 2	3120	0	180	310	Iedereen zei: zoek gewoon een vaste baan
 3	2740	0	140	210	Dit is wat ik in plaats daarvan deed"></textarea>
@@ -917,7 +917,7 @@ function openStory(id) {
     {h:'Afval hierna', num:1, f:f => f.views_volgend_frame == null ? '–' : pct(f.afvalrate_pct)},
     {h:'Kwijt',    num:1, f:f => f.views_volgend_frame == null ? '–' : num(f.verlies_absoluut)},
     {h:'Exits',    num:1, f:f => getalCel(f, 'exited')},
-    {h:'Weggetikt',num:1, f:f => getalCel(f, 'next_story')},
+    {h:'Next story',num:1, f:f => getalCel(f, 'next_story')},
     {h:'Kliks',    num:1, f:f => getalCel(f, 'link_clicks')},
     {h:'Klikrate', num:1, f:f => pct(f.klikrate_pct)},
     {h:'Reacties', num:1, f:f => getalCel(f, 'replies')},

@@ -131,7 +131,7 @@ een SMTP-provider onder Authentication → Emails.
 | `sales` | Verkopen met bedrag en aantal termijnen |
 | `payments` | De termijnen, automatisch aangemaakt bij een verkoop |
 | `story_sequences` | Een story-reeks: het verhaal, de hoek, de CTA en de reach |
-| `story_frames` | Per frame: views, exits, weggetikt, linkkliks, reacties, screenshot |
+| `story_frames` | Per frame: views, exits, next story, linkkliks, reacties, screenshot |
 | `other_costs` | Kosten buiten Meta om |
 | `access_grants` | Wie mag inloggen en wie mag bewerken |
 
@@ -173,8 +173,13 @@ het dashboard rekent zelf uit hoeveel procent van de starters er nog kijkt
 
 1. **Stories → Nieuwe sequence**: code, datum, het verhaal in één regel, de hoek
    (dezelfde A t/m G als de advertenties) en de reach
-2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · weggetikt · hook`
+2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · next story · hook`
 3. Klik de sequence aan om de afvalrate per frame te zien
+
+De namen komen één op één uit Instagram Insights, onder Navigation: **exits** is
+wie de stories helemaal verlaat, **next story** is wie doorswipet naar het verhaal
+van een ander account. Dat verschil telt — bij een exit legt iemand de telefoon
+weg, bij next story kiest iemand actief iets anders.
 
 **Screenshots in één keer.** Sleep alle screenshots van een sequence tegelijk op de
 filmstrip, of klik "Screenshots kiezen" en selecteer ze allemaal. Ze worden op
@@ -189,7 +194,7 @@ Bij vijf frames per week kost dat ongeveer 20 MB per jaar; de gratis 1 GB is dus
 ruim vijftig jaar genoeg.
 
 **Cijfers bijwerken en weggooien.** De frametabel onder de filmstrip is
-bewerkbaar: views, exits, weggetikt, kliks en reacties typ je rechtstreeks in de
+bewerkbaar: views, exits, next story, kliks en reacties typ je rechtstreeks in de
 cel, en hook en type pas je daar ook aan. Elke wijziging wordt opgeslagen zodra je
 de cel verlaat, waarna retentie, afvalrate en de filmstrip meteen opnieuw worden
 gerekend — doortabben door de tabel blijft gewoon werken. Retentie, afval hierna,
