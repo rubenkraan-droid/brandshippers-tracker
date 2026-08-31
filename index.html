@@ -392,7 +392,7 @@
           <div><label for="sfSeq">Sequence</label><select id="sfSeq"></select></div>
         </div>
         <p class="sub">Eén regel per frame, gescheiden door tab, komma of puntkomma:<br>
-          <code>framenr · views · linkkliks · exits · next story · hook</code></p>
+          <code>framenr · viewers · linkkliks · exits · next story · back · hook</code></p>
         <textarea id="framePaste" placeholder="1	3810	0	120	260	Twee jaar geleden stond ik hier nog vakken te vullen
 2	3120	0	180	310	Iedereen zei: zoek gewoon een vaste baan
 3	2740	0	140	210	Dit is wat ik in plaats daarvan deed"></textarea>
@@ -895,7 +895,7 @@ function openStory(id) {
 
   const tiles = [
     ['Reach', num(s.reach), ''],
-    ['Views frame 1', num(s.views_start), ''],
+    ['Viewers frame 1', num(s.views_start), ''],
     ['Doorloop tot het eind', pct(s.doorloop_pct), s.views_eind != null ? num(s.views_eind) + ' kijkers' : '', true],
     ['Linkkliks', num(s.link_clicks), s.klikrate_op_starters_pct != null ? pct(s.klikrate_op_starters_pct) + ' van de starters' : '', true],
     ['Grootste uitstroom', s.zwakste_frame ? 'frame ' + s.zwakste_frame : '–', s.zwakste_afval != null ? pct(s.zwakste_afval) + ' weg' : ''],
@@ -912,10 +912,11 @@ function openStory(id) {
     {h:'#',        f:f => `<b>${f.frame_no}</b>`},
     {h:'Hook',     f:f => tekstCel(f, 'hook')},
     {h:'Type',     f:f => typeCel(f)},
-    {h:'Views',    num:1, f:f => getalCel(f, 'views')},
+    {h:'Viewers',  num:1, f:f => getalCel(f, 'views')},
     {h:'Retentie', num:1, f:f => pct(f.retentie_pct)},
     {h:'Afval hierna', num:1, f:f => f.views_volgend_frame == null ? '–' : pct(f.afvalrate_pct)},
     {h:'Kwijt',    num:1, f:f => f.views_volgend_frame == null ? '–' : num(f.verlies_absoluut)},
+    {h:'Back',     num:1, f:f => getalCel(f, 'back')},
     {h:'Exits',    num:1, f:f => getalCel(f, 'exited')},
     {h:'Next story',num:1, f:f => getalCel(f, 'next_story')},
     {h:'Kliks',    num:1, f:f => getalCel(f, 'link_clicks')},
@@ -1236,6 +1237,7 @@ $('#frameSave').onclick = async () => {
   const lines = $('#framePaste').value.split('\n').map(l => l.trim()).filter(Boolean);
   if (!lines.length) return msg('#frameMsg', 'Niets om op te slaan.', false);
   const n = v => { const x = parseFloat(String(v ?? '0').replace(/\./g,'').replace(',', '.')); return isNaN(x) ? 0 : Math.round(x); };
+  const getal = v => v != null && v !== '' && /^[\d.,\s]+$/.test(String(v));
   const rows = [], bad = [];
   for (const line of lines) {
     const p = line.split(/[\t;,]/).map(s => s.trim());
@@ -1243,7 +1245,9 @@ $('#frameSave').onclick = async () => {
     rows.push({
       sequence_id: +sid, frame_no: n(p[0]), views: n(p[1]),
       link_clicks: n(p[2]), exited: n(p[3]), next_story: n(p[4]),
-      hook: (p[5] ?? '').trim() || null,
+      // veld 6 is back; staat er tekst, dan is het een oude regel en is het de hook
+      back: getal(p[5]) ? n(p[5]) : 0,
+      hook: ((getal(p[5]) ? p[6] : p[5]) ?? '').trim() || null,
     });
   }
   if (!rows.length) return msg('#frameMsg', 'Geen bruikbare regels.', false);

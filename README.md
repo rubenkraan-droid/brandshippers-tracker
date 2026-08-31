@@ -131,7 +131,7 @@ een SMTP-provider onder Authentication → Emails.
 | `sales` | Verkopen met bedrag en aantal termijnen |
 | `payments` | De termijnen, automatisch aangemaakt bij een verkoop |
 | `story_sequences` | Een story-reeks: het verhaal, de hoek, de CTA en de reach |
-| `story_frames` | Per frame: views, exits, next story, linkkliks, reacties, screenshot |
+| `story_frames` | Per frame: viewers, back, exits, next story, linkkliks, reacties, screenshot |
 | `other_costs` | Kosten buiten Meta om |
 | `access_grants` | Wie mag inloggen en wie mag bewerken |
 
@@ -167,25 +167,34 @@ Wekelijkse routine:
 
 ### Story sequences
 
-Een sequence is één verhaal over meerdere frames. Je legt per frame de views vast;
+Een sequence is één verhaal over meerdere frames. Je legt per frame de viewers vast;
 het dashboard rekent zelf uit hoeveel procent van de starters er nog kijkt
 (retentie) en waar de grootste uitstroom zit.
 
 1. **Stories → Nieuwe sequence**: code, datum, het verhaal in één regel, de hoek
    (dezelfde A t/m G als de advertenties) en de reach
-2. **Frames invoeren**: per frame `framenr · views · linkkliks · exits · next story · hook`
+2. **Frames invoeren**: per frame `framenr · viewers · linkkliks · exits · next story · back · hook`
 3. Klik de sequence aan om de afvalrate per frame te zien
 
-De namen komen één op één uit Instagram Insights, onder Navigation: **exits** is
-wie de stories helemaal verlaat, **next story** is wie doorswipet naar het verhaal
-van een ander account. Dat verschil telt — bij een exit legt iemand de telefoon
-weg, bij next story kiest iemand actief iets anders.
+De namen komen één op één uit Instagram Insights. Noteer **viewers**, niet views:
+views telt ook herhaalde weergaven door hetzelfde account, en omdat juist frame 1
+het vaakst opnieuw wordt bekeken maakt dat je doorloop structureel slechter dan
+hij is. Een retentiecurve hoort mensen te tellen, geen afspeelbeurten.
+
+Onder Navigation staan vier getallen die samen optellen tot het totaal: forwards
+(doortikken naar jouw volgende frame), **back**, **exits** en **next story**.
+Forwards laten we weg, dat is gewoon kijkgedrag. De andere drie zeggen wel iets.
+Bij een exit legt iemand de telefoon weg; bij next story kiest iemand actief het
+verhaal van een ander account, en dat is het hardere signaal van de twee. Back is
+het enige getal dat de goede kant op wijst: iemand tikt terug omdat het te snel
+ging of omdat het de moeite waard was, dus een frame met veel back is vaak je
+sterkste frame.
 
 **Screenshots in één keer.** Sleep alle screenshots van een sequence tegelijk op de
 filmstrip, of klik "Screenshots kiezen" en selecteer ze allemaal. Ze worden op
 volgorde van bestandsnaam aan frame 1, 2, 3… gekoppeld — telefoonscreenshots zijn
 op tijd genummerd, dus dat is meteen de goede volgorde. Zijn er meer afbeeldingen
-dan frames, dan maakt hij de ontbrekende frames zelf aan; de views vul je daarna
+dan frames, dan maakt hij de ontbrekende frames zelf aan; de viewers vul je daarna
 in via "Frames invoeren". Losse screenshot vervangen: klik op dat ene frame.
 Die komt in de privé Storage-bucket `story-frames` en is alleen zichtbaar voor wie
 is ingelogd. De browser verkleint het beeld eerst naar maximaal 720px breed en
@@ -194,7 +203,7 @@ Bij vijf frames per week kost dat ongeveer 20 MB per jaar; de gratis 1 GB is dus
 ruim vijftig jaar genoeg.
 
 **Cijfers bijwerken en weggooien.** De frametabel onder de filmstrip is
-bewerkbaar: views, exits, next story, kliks en reacties typ je rechtstreeks in de
+bewerkbaar: viewers, back, exits, next story, kliks en reacties typ je rechtstreeks in de
 cel, en hook en type pas je daar ook aan. Elke wijziging wordt opgeslagen zodra je
 de cel verlaat, waarna retentie, afvalrate en de filmstrip meteen opnieuw worden
 gerekend — doortabben door de tabel blijft gewoon werken. Retentie, afval hierna,
